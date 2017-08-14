@@ -18,11 +18,12 @@ namespace WebUI.Controllers
             repository = repo;
         }
 
-        public ViewResult List(int page = 1)
+        public ViewResult List(string genre, int page = 1)
         {
             BookListViewModel model = new BookListViewModel
             {
                 Books = repository.Books
+                .Where(b => genre == null || b.Genre == genre)
                 .OrderBy(book => book.BookId)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize),
@@ -30,8 +31,10 @@ namespace WebUI.Controllers
                 {
                     CurrentPage = page,
                     ItemsPerPage = pageSize,
-                    TotatlItems = repository.Books.Count()
-                }
+                    TotatlItems = genre == null ? repository.Books.Count() : 
+                                                  repository.Books.Where(book => book.Genre == genre).Count()
+                },
+                CurrentGenre = genre
             };
 
             return View(model);
