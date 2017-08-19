@@ -3,6 +3,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Domain.Entities;
 using System.Collections.Generic;
 using System.Linq;
+using Moq;
+using Domain.Abstract;
+using WebUI.Controllers;
+using System.Web.Mvc;
+using WebUI.Models;
 
 namespace UnitTests
 {
@@ -98,6 +103,59 @@ namespace UnitTests
 
             Assert.AreEqual(cart.Lines.Count(), 0);
 
+        }
+
+        [TestMethod]
+        public void Can_Add_To_Cart()
+        {    
+            Mock<IBookRepository> mock = new Mock<IBookRepository>();
+            mock.Setup(m => m.Books).Returns(new List<Book>
+            {
+                new Book { BookId = 1, Name = "Book1", Genre = "Genre1" }
+            }.AsQueryable());
+
+            Cart cart = new Cart();
+
+            CartController controller = new CartController(mock.Object);
+
+            controller.AddToCart(cart, 1, null);
+
+            Assert.AreEqual(cart.Lines.Count(), 1);
+            Assert.AreEqual(cart.Lines.ToList()[0].Book.BookId, 1);
+        }
+
+        [TestMethod]
+        public void Adding_Book_To_Cart_Goes_Screen()
+        {
+            Mock<IBookRepository> mock = new Mock<IBookRepository>();
+            mock.Setup(m => m.Books).Returns(new List<Book>
+            {
+                new Book { BookId = 1, Name = "Book1", Genre = "Genre1" }
+            }.AsQueryable());
+
+            Cart cart = new Cart();
+
+            CartController controller = new CartController(mock.Object);
+
+            RedirectToRouteResult result = controller.AddToCart(cart, 2, "myUrl");
+
+            Assert.AreEqual(result.RouteValues["action"], "Index");
+            Assert.AreEqual(result.RouteValues["returnUrl"], "myUrl");
+        }
+
+        [TestMethod]
+        public void Can_View_Cart_Contents()
+        {
+            Cart cart = new Cart();
+
+            CartController target = new CartController(null);
+
+            CartIndexViewModel result = (CartIndexViewModel)target.Index(cart, "myUrl").ViewData.Model;
+
+            Assert.AreSame(result.Cart, cart);
+            Assert.AreEqual(result.ReturnUrl, "myUrl");
+
+           
         }
     }
 }
